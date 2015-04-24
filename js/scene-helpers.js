@@ -35,6 +35,13 @@ var mesh = function(geometry, material) {
     );
 }
 
+var makeProceduralTexture = function(generatorCallback) {
+    var thisTexture = new THREE.Texture( generatorCallback() );
+    thisTexture.needsUpdate = true;
+
+    return thisTexture;
+}
+
 var makeScreen = function($container, opts) {
     return new (function($container) {
 
