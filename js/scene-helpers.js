@@ -49,8 +49,9 @@ var makeScreen = function($container, opts) {
         this.settings = $.extend(this.defaults, opts);
 
         this.$container    = $( $container );
-        this.sceneMeshes  = {};
+        this.sceneMeshes   = {};
         this.sceneLights   = {};
+        this.sceneTextures = {};
 
         /* Init */
         this.width  = this.$container.width();
@@ -80,16 +81,41 @@ var makeScreen = function($container, opts) {
             this.scene.add( this.sceneMeshes[slug] );
         }
 
-        this.addLight = function(slug, lightObject) {
-            this.sceneLights[slug] = lightObject;
-            this.scene.add( this.sceneLights[slug] );
-        }
-
         this.getMesh = function(slug) {
             if( this.sceneMeshes[slug] ) {
                 return this.sceneMeshes[slug];
             } else {
                 console.error("Can't find any object identified by '"+slug+"'");
+                return null;
+            }
+        }
+
+        this.addLight = function(slug, lightObject) {
+            this.sceneLights[slug] = lightObject;
+            this.scene.add( this.sceneLights[slug] );
+        }
+
+        this.getLight = function(slug) {
+            if( this.sceneLights[slug] ) {
+                return this.sceneLights[slug];
+            } else {
+                console.error("Can't find any light identified by '"+slug+"'");
+                return null;
+            }
+        }
+
+        this.addTexture = function(slug, texHref) {
+            this.sceneTextures[slug] = new THREE.ImageUtils.loadTexture(texHref);
+
+            this.sceneTextures[slug].minFilter = THREE.LinearFilter; 
+            this.sceneTextures[slug].magFilter = THREE.LinearFilter; 
+        }
+
+        this.getTexture = function(slug) {
+            if( this.sceneTextures[slug] ) {
+                return this.sceneTextures[slug];
+            } else {
+                console.error("Can't find any texture identified by '"+slug+"'");
                 return null;
             }
         }

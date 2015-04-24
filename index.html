@@ -7,6 +7,8 @@
 
     <div id="container"></div>
 
+    <pre id="time-status"></pre>
+
     <script src="js/libs/three.min.js"></script>
     <script src="js/libs/jquery.js"></script>
     <script src="js/libs/helpers.min.js"></script>
@@ -26,42 +28,93 @@
 
     <script>
 
+        // TIME_SCALE = 60 =>
+        // 1 minute (60 seconds) in simulation <=> 1 second of real-time  
+        // TIME_SCALE = 3600 =>
+        // 1 hour (3600 seconds) in simulation <=> 1 second of real-time
+        //      => The simulated earth shuld make a full rotation in 24 seconds
+        var TIME_SCALE = 3600; 
+
         $( function() {
 
             var screen = makeScreen('#container');
             screen.camera.position.z = 2;
 
-            var planetTexture = new THREE.ImageUtils.loadTexture("earth-texture.jpg");
+            screen.addTexture('earth-base', "tex-earth.jpg");
+            screen.addTexture('earth-specular', "tex-earth-specular.jpg");
+            screen.addTexture('earth-bump', "tex-earth-bump.jpg");
+            screen.addTexture('earth-clouds-base', "tex-clouds.jpg");
+            screen.addTexture('earth-clouds-alpha', "tex-clouds-alpha.jpg");
 
-            planetTexture.minFilter = THREE.LinearFilter; 
-            planetTexture.magFilter = THREE.LinearFilter; 
-
-            planetMesh = mesh(
+            var planetMesh = mesh(
                 new THREE.SphereGeometry( 0.5, 32, 32 ),
-                new THREE.MeshPhongMaterial({
-                    color: 0xeeece8, 
-                    specular: 0x111111, 
-                    shininess: 30,
-                    map: planetTexture
+                new THREE.MeshPhongMaterial({ 
+                    map: screen.getTexture('earth-base'),
+                    bumpMap: screen.getTexture('earth-bump'),
+                    bumpScale: 0.03,
+                    specularMap: screen.getTexture('earth-specular'),
+                    specular: color(0.2), 
                 })
             );
+
+            var cloudsMesh = mesh(
+                new THREE.SphereGeometry( 0.51, 32, 32 ),
+                new THREE.MeshPhongMaterial({
+                    color: color(1),
+                    map: screen.getTexture('earth-clouds-alpha'),
+                    alphaMap: screen.getTexture('earth-clouds-alpha'),
+                    //side: THREE.DoubleSide,
+                    transparent: true,
+                    opacity: 0.8
+                })
+            );
+
+            planetMesh.add(cloudsMesh);
 
             screen.addMesh('my-planet', planetMesh);
 
             screen.addLight('ambient-light', new THREE.AmbientLight(0x101010, 1.0) );
 
-            screen.addLight('my-light', new THREE.PointLight( 0xffffff, 5, 50 ) );
-            screen.getLight('my-light').position.set(10, 15, 15);
+            screen.addLight('my-light', new THREE.DirectionalLight( 0xffffff ) );
+            screen.getLight('my-light').position.set(1, 0, 1);
 
             // 0.408 radians =~ 23.4 deg (=> Earth rotation axis)
+            var topAxisVector = new THREE.Vector3( 0, 1, 0 );
             var earthAxisVector = new THREE.Vector3( 0, 1, 0 );
             earthAxisVector.applyAxisAngle(new THREE.Vector3(0, 0, 1), 0.408); 
 
-            var rotationAngle = 0;
+            var anglePerHour = Math.PI * 2 / 24; // One full rotation every 24 hours
+            var anglePerSecond = anglePerHour / 3600;
+
+            var nowTick = Date.now() / 1000;
+            var lastTick = nowTick;
+
+            var elapsedSeconds = 0;
+            var elapsedRotation = 0;
+            var elapsedTurns = 0;
 
             screen.onFrame( function() {
-                planetMesh.rotateOnAxis(earthAxisVector, 0.01);
-                //planetMesh.rotation.y += 0.004;
+                nowTick = Date.now() / 1000;
+
+                var secondsDiff = TIME_SCALE * (nowTick - lastTick);
+                var angularVelocity = anglePerSecond * secondsDiff;
+
+                lastTick = nowTick;
+
+                elapsedSeconds += secondsDiff;
+                elapsedRotation += angularVelocity;
+                elapsedTurns = Math.floor(elapsedSeconds / 86400);
+                var turnsPlural = elapsedTurns == 1 ? '' : 's';
+
+                var humanReadableTimeDiff = H.humanReadableTimeDiff(elapsedSeconds * 1000);
+
+                $('#time-status').text(
+                    'Elapsed time: '+humanReadableTimeDiff+' \n'+
+                    'Elapsed full rotations: '+elapsedTurns+' turn'+turnsPlural+' \n'
+                );
+
+                planetMesh.rotateOnAxis(earthAxisVector, angularVelocity);
+                cloudsMesh.rotateOnAxis(topAxisVector, angularVelocity * 2);
             });
 
             screen.render();
