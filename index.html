@@ -1,0 +1,72 @@
+<!doctype html>
+<html>
+<head>
+    <link type="text/css" rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div id="container"></div>
+
+    <script src="js/libs/three.min.js"></script>
+    <script src="js/libs/jquery.js"></script>
+    <script src="js/libs/helpers.min.js"></script>
+    <script src="js/scene-helpers.js"></script>
+
+    <script type="x-shader" id="vertex-shader">
+        void main() {
+            gl_Position = vec4( position, 1.0 );
+        }
+    </script>
+
+    <script type="x-shader" id="fragment-shader">
+        void main() {
+            gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
+        }
+    </script>
+
+    <script>
+
+        $( function() {
+
+            var screen = makeScreen('#container');
+            screen.camera.position.z = 2;
+
+            var planetTexture = new THREE.ImageUtils.loadTexture("earth-texture.jpg");
+
+            planetTexture.minFilter = THREE.LinearFilter; 
+            planetTexture.magFilter = THREE.LinearFilter; 
+
+            planetMesh = mesh(
+                new THREE.SphereGeometry( 0.5, 32, 32 ),
+                new THREE.MeshPhongMaterial({
+                    color: 0xeeece8, 
+                    specular: 0x111111, 
+                    shininess: 30,
+                    map: planetTexture
+                })
+            );
+
+            screen.addMesh('my-planet', planetMesh);
+
+            screen.addLight('ambient-light', new THREE.AmbientLight(0x101010, 1.0) );
+
+            screen.addLight('my-light', new THREE.PointLight( 0xffffff, 5, 50 ) );
+            screen.getLight('my-light').position.set(10, 15, 15);
+
+            // 0.408 radians =~ 23.4 deg (=> Earth rotation axis)
+            var earthAxisVector = new THREE.Vector3( 0, 1, 0 );
+            earthAxisVector.applyAxisAngle(new THREE.Vector3(0, 0, 1), 0.408); 
+
+            var rotationAngle = 0;
+
+            screen.onFrame( function() {
+                planetMesh.rotateOnAxis(earthAxisVector, 0.01);
+                //planetMesh.rotation.y += 0.004;
+            });
+
+            screen.render();
+                        
+        });
+    </script>
+</body>
+</html>
