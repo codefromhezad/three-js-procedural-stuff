@@ -103,9 +103,9 @@
                 new THREE.MeshPhongMaterial({ 
                     map: screen.getTexture('earth-base'),
                     bumpMap: screen.getTexture('earth-bump'),
-                    bumpScale: 0.03,
+                    bumpScale: 0.01,
                     specularMap: screen.getTexture('earth-specular'),
-                    specular: color(0.2), 
+                    specular: color(0.15), 
                 })
             );
 
@@ -116,7 +116,7 @@
                     map: screen.getTexture('earth-clouds'),
                     alphaMap: screen.getTexture('earth-clouds-alpha'),
                     transparent: true,
-                    opacity: 0.8
+                    opacity: 1
                 })
             );
             cloudsMesh.overdraw = true;
